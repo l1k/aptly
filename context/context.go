@@ -3,6 +3,14 @@ package context
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"runtime/pprof"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/smira/aptly/aptly"
 	"github.com/smira/aptly/console"
 	"github.com/smira/aptly/database"
@@ -14,13 +22,6 @@ import (
 	"github.com/smira/aptly/utils"
 	"github.com/smira/commander"
 	"github.com/smira/flag"
-	"os"
-	"path/filepath"
-	"runtime"
-	"runtime/pprof"
-	"strings"
-	"sync"
-	"time"
 )
 
 // AptlyContext is a common context shared by all commands
@@ -100,7 +101,10 @@ func (context *AptlyContext) config() *utils.ConfigStructure {
 
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Config file not found, creating default config at %s\n\n", configLocations[0])
-				utils.SaveConfig(configLocations[0], &utils.Config)
+				err = utils.SaveConfig(configLocations[0], &utils.Config)
+				if err != nil {
+					Fatal(fmt.Errorf("error creating default config file %s: %s", configLocations[0], err))
+				}
 			}
 		}
 
@@ -267,7 +271,7 @@ func (context *AptlyContext) ReOpenDatabase() error {
 
 	for try := 0; try < MaxTries; try++ {
 		err := context.database.ReOpen()
-		if err == nil || strings.Index(err.Error(), "resource temporarily unavailable") == -1 {
+		if err == nil || !strings.Contains(err.Error(), "resource temporarily unavailable") {
 			return err
 		}
 		context._progress().Printf("Unable to reopen database, sleeping %s\n", Delay)

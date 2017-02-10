@@ -329,11 +329,7 @@ func (g *GpgVerifier) IsClearSigned(clearsigned io.Reader) (bool, error) {
 		}
 	}
 
-	if err := scanner.Err(); err != nil {
-		return false, err
-	}
-
-	return false, nil
+	return false, scanner.Err()
 }
 
 // VerifyClearsigned verifies clearsigned file using gpgv
